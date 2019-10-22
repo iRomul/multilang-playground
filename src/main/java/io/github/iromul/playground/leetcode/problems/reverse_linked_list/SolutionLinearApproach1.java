@@ -7,29 +7,17 @@ public class SolutionLinearApproach1 {
 
     @Contract("null -> null")
     public static ListNode reverseList(ListNode head) {
-        if (head == null) {
-            return null;
+        ListNode prev = null;
+        ListNode curr = head;
+
+        while (curr != null) {
+            ListNode nextTmp = curr.next;
+
+            curr.next = prev;
+            prev = curr;
+            curr = nextTmp;
         }
 
-        if (head.next == null) {
-            return head;
-        }
-
-        ListNode a = head;
-        ListNode b = a.next;
-        ListNode ahead;
-
-        a.next = null;
-
-        do {
-            ahead = b.next;
-
-            b.next = a;
-            a = b;
-
-            b = ahead;
-        } while (ahead != null);
-
-        return a;
+        return prev;
     }
 }
