@@ -3,5 +3,5 @@ plugins {
 }
 
 dependencies {
-    implementation("org.codehaus.groovy:groovy-all:2.5.7")
+    implementation("org.codehaus.groovy:groovy-all:2.5.8")
 }
