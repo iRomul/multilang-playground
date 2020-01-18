@@ -1,27 +1,28 @@
-package io.github.iromul.media
+package io.github.iromul.media.scripts
 
+import io.github.iromul.media.eraseNumeration
+import io.github.iromul.media.excludeRoot
 import io.github.iromul.media.meta.TracksOrder.*
 import io.github.iromul.media.meta.buildDirectoryMeta
+import io.github.iromul.media.reorderByPlaylist
+import mu.KotlinLogging
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class MediaOrganizer(
-    input: String,
-    output: String,
-    private val dryRun: Boolean = false
-) {
+class OrganizeAndCopyFilesScript(
+    mediaRoot: File,
+    private val output: File,
+    dryRun: Boolean = false
+) : Script(mediaRoot, dryRun) {
 
-    private val filter = listOf("Cover", "Covers", "Artists", "Playlists")
+    private val logger = KotlinLogging.logger {}
 
-    private val inputRoot = File(input)
-    private val outputRoot = File(output)
-
-    fun perform() {
-        inputRoot.walkTopDown()
-            .maxDepth(2)
-            .filter { it.isDirectory && it.name !in filter }
-            .forEach(this::processDirectory)
+    override fun perform() {
+        mediaRoot.walkTopDown()
+            .maxDepth(3)
+            .filter { it.isDirectory }
+            .forEach(::processDirectory)
     }
 
     private fun processDirectory(directory: File) {
@@ -30,14 +31,14 @@ class MediaOrganizer(
         } ?: throw IllegalStateException("Can't read filed from '${directory.path}'")
 
         if (musicFiles.isNotEmpty()) {
-            val relative = Paths.get(directory.path).excludeRoot(Paths.get(inputRoot.path))
+            val relative = Paths.get(directory.path).excludeRoot(Paths.get(mediaRoot.path))
 
-            val targetOutput = Paths.get(outputRoot.toURI())
+            val targetOutput = Paths.get(output.toURI())
                 .resolve(relative)
                 .toFile()
                 .apply { mkdirs() }
 
-            println("Copying music files from '${directory.path}' to '${targetOutput.path}'...")
+            logger.info { "Copying music files from '${directory.path}' to '${targetOutput.path}'..." }
 
             organizeAndCopyDirectory(directory, musicFiles.asList(), targetOutput)
         }
@@ -57,29 +58,25 @@ class MediaOrganizer(
 
         orderedMusicFiles.forEachIndexed { i, file ->
             val oldName = file.name
-            val oldNameWithoutIndex = eraseNumeration(oldName, meta.numeration)
+            val oldNameWithoutIndex =
+                eraseNumeration(oldName, meta.numeration)
 
             val position = (i + 1).toString().padStart(digits, '0')
             val newName = "$position - $oldNameWithoutIndex"
 
-            println("Copying '$oldName' to '$newName'")
 
-            fileOperation {
-                val targetPath = Paths.get(outputDir.path, newName)
-                val targetFile = targetPath.toFile()
+            val targetPath = Paths.get(outputDir.path, newName)
+            val targetFile = targetPath.toFile()
 
-                if (!targetFile.exists()) {
+            if (!targetFile.exists()) {
+                logger.info { "Copying '$oldName' to '$newName'" }
+
+                fileOperation {
                     Files.copy(file.toPath(), targetPath)
-                } else {
-                    println("Skipping '$newName' because file is already exists")
                 }
+            } else {
+                logger.info { "Skipping '$newName' because file is already exists" }
             }
-        }
-    }
-
-    private fun fileOperation(callback: () -> Unit) {
-        if (!dryRun) {
-            callback()
         }
     }
 }

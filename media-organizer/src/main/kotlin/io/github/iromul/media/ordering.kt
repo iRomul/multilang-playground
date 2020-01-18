@@ -11,9 +11,3 @@ fun reorderByPlaylist(files: List<File>, playlistData: PlaylistData): List<File>
         fileInList
     }
 }
-
-private fun winAwareNameWeakMatch(fileName: String, lookup: String): Boolean {
-    val normalized = lookup.replace("([.?\"])".toRegex(), "_")
-
-    return fileName.contains(normalized)
-}

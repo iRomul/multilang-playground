@@ -4,6 +4,7 @@ import io.github.iromul.media.enumify
 import io.github.iromul.media.playlist.Entry
 import io.github.iromul.media.playlist.PlaylistData
 import java.io.File
+import java.nio.charset.Charset
 import java.util.*
 
 fun buildDirectoryMeta(directory: File): DirectoryMeta {
@@ -55,7 +56,7 @@ fun buildDirectoryMeta(directory: File): DirectoryMeta {
 fun loadPlaylistData(file: File): PlaylistData {
     val data = PlaylistData()
 
-    file.useLines { lineSequence ->
+    file.useLines(Charset.forName("UTF-16")) { lineSequence ->
         lineSequence.drop(1).forEach { line ->
             val columns = line.split("\t")
 

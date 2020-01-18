@@ -2,7 +2,6 @@ package io.github.iromul.media
 
 import io.github.iromul.media.meta.Numeration
 import io.github.iromul.media.meta.Numeration.*
-import java.nio.file.Path
 
 fun eraseNumeration(name: String, numeration: Numeration): String {
     return when (numeration) {
@@ -14,7 +13,3 @@ fun eraseNumeration(name: String, numeration: Numeration): String {
 }
 
 fun enumify(obj: Any?) = obj.toString().toUpperCase().replace("-", "_")
-
-fun Path.excludeRoot(exclusion: Path): Path {
-    return (this - exclusion).reduce { acc, path -> acc.resolve(path) }
-}

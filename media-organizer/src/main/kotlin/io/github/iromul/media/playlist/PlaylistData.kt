@@ -1,6 +1,6 @@
 package io.github.iromul.media.playlist
 
-class PlaylistData: Iterable<Entry> {
+class PlaylistData : Iterable<Entry> {
 
     private val entries = mutableListOf<Entry>()
 
