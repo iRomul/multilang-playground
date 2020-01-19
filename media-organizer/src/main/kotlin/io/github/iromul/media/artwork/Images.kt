@@ -25,9 +25,9 @@ class Image(
         return file
     }
 
-    fun write(image: ByteArray) {
-        file.writeBytes(image)
-    }
+    fun write(image: ByteArray) = file.writeBytes(image)
+
+    fun read() = file.readBytes()
 
     fun markAsMissed() {
         missedFile.createNewFile()

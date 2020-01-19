@@ -4,7 +4,6 @@ import io.github.iromul.media.library.collection.MediaCollection
 import io.github.iromul.media.library.collection.MediaCollectionType
 import io.github.iromul.media.library.collection.MediaCollectionType.*
 import io.github.iromul.media.library.layout.MediaCollectionLayout
-import mu.KotlinLogging
 import java.io.File
 
 class MediaLibrary(
@@ -12,32 +11,29 @@ class MediaLibrary(
     private val layout: MediaCollectionLayout
 ) {
 
-    private val logger = KotlinLogging.logger {}
-
     fun forEachCollection(action: (MediaCollection) -> Unit) {
-        mediaRoot.walkTopDown()
-            .filter { it.isDirectory && it.isMediaCollection }
-            .forEach {
-                when {
-                    layout.isPlaylist(it) -> {
-                        logger.debug { "Found playlist $it" }
-                        action(it.toMediaCollection(PLAYLIST))
+        val libraryDirectories = listOf(File(mediaRoot, "Artists"), File(mediaRoot, "Playlists"))
+
+        libraryDirectories.forEach { subdirectory ->
+            subdirectory.walkTopDown()
+                .filter { it.isDirectory && it.isMediaCollection }
+                .forEach {
+                    val type = when {
+                        layout.isPlaylist(it) -> PLAYLIST
+                        layout.isAlbum(it) -> ALBUM
+                        layout.isArtistEssential(it) -> ARTIST_ESSENTIAL_PLAYLIST
+                        else -> throw IllegalStateException("Unsupported collection type")
                     }
-                    layout.isAlbum(it) -> {
-                        logger.debug { "Found album $it" }
-                        action(it.toMediaCollection(ALBUM))
-                    }
-                    layout.isArtistEssential(it) -> {
-                        logger.debug { "Found essential $it" }
-                        action(it.toMediaCollection(ARTIST_ESSENTIAL_PLAYLIST))
-                    }
+
+                    action(it.toMediaCollection(type))
                 }
-            }
+        }
     }
 
     private fun File.toMediaCollection(type: MediaCollectionType): MediaCollection {
         return MediaCollection(
             name = name,
+            directory = this,
             type = type,
             files = getMediaFiles()
         )

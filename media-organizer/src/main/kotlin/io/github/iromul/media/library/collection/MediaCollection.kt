@@ -6,21 +6,33 @@ import java.io.File
 
 class MediaCollection(
     val name: String,
+    val directory: File,
     val type: MediaCollectionType,
-    private val files: List<File>
-) {
+    files: List<File>
+) : Collection<MediaFile> {
 
-    fun forEachMediaFile(action: (MediaFile) -> Unit) {
-        files.forEach {
-            val audioFile = AudioFileIO.read(it)
+    private val mediaFiles = files.map {
+        val audioFile = AudioFileIO.read(it)
 
-            val tag = audioFile.tag
+        val tag = audioFile.tag
 
-            val artist = tag.getFirst(FieldKey.ARTIST)
-            val album = tag.getFirst(FieldKey.ALBUM)
-            val title = tag.getFirst(FieldKey.TITLE)
+        val track = tag.getFirst(FieldKey.TRACK).toInt()
+        val artist = tag.getFirst(FieldKey.ARTIST)
+        val album = tag.getFirst(FieldKey.ALBUM)
+        val title = tag.getFirst(FieldKey.TITLE)
 
-            action(MediaFile(it, null, artist, album, title))
-        }
+        MediaFile(it, tag, track, artist, album, title)
     }
+
+    fun forEachMediaFile(action: (MediaFile) -> Unit) = forEach(action)
+
+    override val size = mediaFiles.size
+
+    override fun contains(element: MediaFile) = mediaFiles.contains(element)
+
+    override fun containsAll(elements: Collection<MediaFile>) = mediaFiles.containsAll(elements)
+
+    override fun isEmpty() = mediaFiles.isEmpty()
+
+    override fun iterator() = mediaFiles.iterator()
 }
