@@ -8,6 +8,11 @@ object Config {
         LogManager.getLogManager().reset()
     }
 
+    object AssignCoversToMediaFilesScript {
+
+        var artworkSize = 500
+    }
+
     object ArtworkCache {
 
         var downloadSize = 600

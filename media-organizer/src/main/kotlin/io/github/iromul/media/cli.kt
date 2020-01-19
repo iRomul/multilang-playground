@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.types.file
+import io.github.iromul.media.scripts.AssignArtworkToMediaFilesScript
 import io.github.iromul.media.scripts.BuildArtworkCacheScript
 import io.github.iromul.media.scripts.OrganizeAndCopyFilesScript
 
@@ -54,7 +55,23 @@ class BuildArtworkCacheCommand : CliktCommand(
     }
 }
 
+class AssignCoversToMediaFilesCommand : CliktCommand(
+    name = "artwork-assign",
+    help = "Assign artwork to media files using artwork cache",
+    printHelpOnEmptyArgs = true
+) {
+
+    private val mediaRoot by option("-m", "--media-root", help = "Media directory root")
+        .file(exists = true, folderOkay = true, readable = true)
+        .required()
+
+    override fun run() {
+        AssignArtworkToMediaFilesScript(mediaRoot).perform()
+    }
+}
+
 fun main(args: Array<String>) = MediaOrganizerCommand()
     .subcommands(CopyMediaCommand())
     .subcommands(BuildArtworkCacheCommand())
+    .subcommands(AssignCoversToMediaFilesCommand())
     .main(args)
