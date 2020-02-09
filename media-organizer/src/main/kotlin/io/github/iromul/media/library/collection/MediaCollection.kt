@@ -21,10 +21,16 @@ class MediaCollection(
         val album = tag.getFirst(FieldKey.ALBUM)
         val title = tag.getFirst(FieldKey.TITLE)
 
-        MediaFile(it, tag, track, artist, album, title)
+        MediaFile(it, audioFile, tag, track, artist, album, title)
     }
 
-    fun forEachMediaFile(action: (MediaFile) -> Unit) = forEach(action)
+    fun forEachMediaFile(action: (MediaFile) -> Unit) = forEach {
+        action(it)
+
+        if (it.shouldBeCommitted) {
+            it.audioFile.commit()
+        }
+    }
 
     override val size = mediaFiles.size
 

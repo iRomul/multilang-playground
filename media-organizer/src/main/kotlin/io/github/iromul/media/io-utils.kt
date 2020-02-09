@@ -16,6 +16,4 @@ fun String.sanitizeWindowsFileName() = replace("[<>:\"/\\\\|?*]".toRegex(), "_")
     if (endsWith(".")) this + "_" else this
 }
 
-fun winAwareNameWeakMatch(fileName: String, lookup: String): Boolean {
-    return fileName.contains(lookup.sanitizeWindowsFileName())
-}
+val Path.extension: String get() = fileName.toString().substringAfterLast(".")

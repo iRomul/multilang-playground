@@ -1,11 +1,15 @@
 package io.github.iromul.media.scripts
 
-import io.github.iromul.media.eraseNumeration
 import io.github.iromul.media.excludeRoot
-import io.github.iromul.media.meta.TracksOrder.*
-import io.github.iromul.media.meta.buildDirectoryMeta
-import io.github.iromul.media.reorderByPlaylist
-import mu.KotlinLogging
+import io.github.iromul.media.library.MediaLibrary
+import io.github.iromul.media.library.collection.MediaCollection
+import io.github.iromul.media.library.collection.MediaCollectionType.*
+import io.github.iromul.media.library.collection.stringify
+import io.github.iromul.media.library.layout.DefaultMediaCollectionLayout
+import io.github.iromul.media.sanitizeWindowsFileName
+import io.github.iromul.media.scripts.order.AlbumCollectionOrder
+import io.github.iromul.media.scripts.order.PlaylistCollectionOrder
+import io.ktor.util.extension
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -16,66 +20,59 @@ class OrganizeAndCopyFilesScript(
     dryRun: Boolean = false
 ) : Script(mediaRoot, dryRun) {
 
-    private val logger = KotlinLogging.logger {}
+    private val library = MediaLibrary(mediaRoot, DefaultMediaCollectionLayout(mediaRoot))
 
     override fun perform() {
-        mediaRoot.walkTopDown()
-            .maxDepth(3)
-            .filter { it.isDirectory }
-            .forEach(::processDirectory)
-    }
-
-    private fun processDirectory(directory: File) {
-        val musicFiles = directory.listFiles { _, name ->
-            name.matches(".*\\.(mp3|aac|m4a)".toRegex())
-        } ?: throw IllegalStateException("Can't read filed from '${directory.path}'")
-
-        if (musicFiles.isNotEmpty()) {
-            val relative = Paths.get(directory.path).excludeRoot(Paths.get(mediaRoot.path))
-
-            val targetOutput = Paths.get(output.toURI())
-                .resolve(relative)
-                .toFile()
-                .apply { mkdirs() }
-
-            logger.info { "Copying music files from '${directory.path}' to '${targetOutput.path}'..." }
-
-            organizeAndCopyDirectory(directory, musicFiles.asList(), targetOutput)
+        library.forEachCollection { collection ->
+            processCollection(collection)
         }
     }
 
-    private fun organizeAndCopyDirectory(directory: File, musicFiles: List<File>, outputDir: File) {
-        val meta = buildDirectoryMeta(directory)
+    private fun processCollection(collection: MediaCollection) {
+        val directory = collection.directory
 
-        val total = musicFiles.size
-        val digits = total.toString().length
+        val relative = Paths.get(directory.path).excludeRoot(Paths.get(mediaRoot.path))
 
-        val orderedMusicFiles = when (meta.order) {
-            KEEP -> musicFiles
-            PLAYLIST -> reorderByPlaylist(musicFiles, meta.playlistData!!)
-            SHUFFLE -> musicFiles.shuffled()
+        val targetOutput = Paths.get(output.toURI())
+            .resolve(relative)
+            .toFile()
+
+        if (targetOutput.exists()) {
+            println("Skipping ${collection.stringify()} because it already exists")
+
+            return
+        } else {
+            fileOperation {
+                targetOutput.mkdirs()
+            }
         }
 
-        orderedMusicFiles.forEachIndexed { i, file ->
-            val oldName = file.name
-            val oldNameWithoutIndex =
-                eraseNumeration(oldName, meta.numeration)
+        println("Copying ${collection.stringify()} to '${targetOutput.path}'...")
 
-            val position = (i + 1).toString().padStart(digits, '0')
-            val newName = "$position - $oldNameWithoutIndex"
+        val orderedMediaFiles = when (collection.type) {
+            ALBUM -> AlbumCollectionOrder(collection)
+            PLAYLIST, ARTIST_ESSENTIAL_PLAYLIST -> PlaylistCollectionOrder(collection)
+        }
 
+        orderedMediaFiles.ordered().forEach { namedMediaFile ->
+            val newName = namedMediaFile.name
+            val mediaFile = namedMediaFile.mediaFile
+            val sourceFile = mediaFile.file
 
-            val targetPath = Paths.get(outputDir.path, newName)
+            val sourceFileExtension = sourceFile.toPath().extension
+
+            val targetFileName = "${newName.sanitizeWindowsFileName()}.$sourceFileExtension"
+            val targetPath = Paths.get(targetOutput.path, targetFileName)
             val targetFile = targetPath.toFile()
 
             if (!targetFile.exists()) {
-                logger.info { "Copying '$oldName' to '$newName'" }
+                println("\tCopying ${mediaFile.stringify()} as '$targetFileName'")
 
                 fileOperation {
-                    Files.copy(file.toPath(), targetPath)
+                    Files.copy(sourceFile.toPath(), targetPath)
                 }
             } else {
-                logger.info { "Skipping '$newName' because file is already exists" }
+                println("Skipping '$newName' because file is already exists")
             }
         }
     }
