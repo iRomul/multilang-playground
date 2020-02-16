@@ -34,11 +34,18 @@ class BuildArtworkCacheScript(
 
             library.forEachCollection {
                 it.forEachMediaFile { mediaFile ->
-                    val cacheEntry = artworkCache.find(mediaFile.artist, mediaFile.album)
+                    try {
+                        val cacheEntry = artworkCache.find(mediaFile.artist, mediaFile.album)
 
-                    processCovers(cacheEntry, mediaFile)
+                        processCovers(cacheEntry, mediaFile)
 
-                    ++total
+                        ++total
+                    } catch (e: Exception) {
+                        System.err.println("An error occurred during file processing: ${e.message}\n" +
+                                "File: ${mediaFile.file}")
+
+                        throw e
+                    }
                 }
             }
         } catch (e: Exception) {
