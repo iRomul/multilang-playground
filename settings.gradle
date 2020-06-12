@@ -3,5 +3,3 @@ rootProject.name = 'multilang-playground'
 include 'kotlin-playground'
 include 'leetcode-solutions'
 include 'scripts'
-include 'media-organizer'
-
