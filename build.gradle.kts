@@ -1,5 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.3.61" apply false
+    java
+    kotlin("jvm") version "2.1.20" apply false
 }
 
 group = "io.github.iromul"
@@ -12,5 +13,11 @@ subprojects {
 
     tasks.withType<Test> {
         useJUnitPlatform()
+    }
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }

@@ -23,7 +23,7 @@ class RouteDsl {
         infix fun String.`for a`(duration: Duration) = duration
 
         private fun parseDuration(str: String): Duration {
-            return Duration.parse("PT" + str.toUpperCase())
+            return Duration.parse("PT" + str.uppercase())
         }
     }
 }
