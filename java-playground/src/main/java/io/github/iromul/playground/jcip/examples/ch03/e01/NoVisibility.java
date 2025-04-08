@@ -1,4 +1,4 @@
-package io.github.iromul.playground.concurrency;
+package io.github.iromul.playground.jcip.examples.ch03.e01;
 
 public class NoVisibility {
 
